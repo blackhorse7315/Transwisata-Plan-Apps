@@ -132,4 +132,60 @@ function showInstallHelp(){const ios=/iPad|iPhone|iPod/.test(navigator.userAgent
 if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('PWA service worker:',err)))}
 </script><div id="adminLoginOverlay" class="overlay" style="z-index:40"><div class="modal" style="max-width:410px"><div class="modal-head"><h2>Login Administrator</h2><button type="button" onclick="hideLoginPrompt()">✕</button></div><form id="adminLoginForm"><label for="adminUsername">Username</label><input id="adminUsername" autocomplete="username" required placeholder="admin atau operation@pt-twa.co.id"><label for="adminPassword" style="margin-top:12px">Password</label><input id="adminPassword" type="password" autocomplete="current-password" required><p id="adminLoginError" style="color:#ffb0b0;min-height:1.2em"></p><div class="actions"><button type="button" onclick="hideLoginPrompt()">Batal</button><button type="submit" class="primary">Login</button></div></form></div></div><script>window.isTimelineAdmin=false;function showLoginPrompt(){document.getElementById('adminLoginOverlay').classList.add('show');document.getElementById('adminLoginError').textContent='';}function hideLoginPrompt(){document.getElementById('adminLoginOverlay').classList.remove('show');document.getElementById('adminPassword').value='';}function toggleAdminLogin(){if(window.isTimelineAdmin){window.timelineLogout();}else showLoginPrompt();}window.setTimelineAdmin=function(active){window.isTimelineAdmin=active;document.getElementById('authBtn').textContent=active?'Logout Admin':'Login Admin';document.getElementById('addBtn').hidden=!active;document.querySelectorAll('.admin-only').forEach(el=>el.hidden=!active);if(typeof render==='function')render();};</script><div id="firebaseBar" style="position:fixed;bottom:12px;left:12px;z-index:30;background:#14243a;color:white;padding:10px 14px;border:1px solid #53647b;border-radius:12px;box-shadow:0 4px 18px #0006;font:13px system-ui;max-width:calc(100vw - 24px)"><span id="firebaseStatus">Menghubungkan Firebase...</span></div>
 
-<script type="module" src="./firebase.js"></script></body></html>
+<script type="module" src="./firebase.js"></script><style>
+#exitConfirmOverlay[hidden]{display:none!important}#exitConfirmOverlay{position:fixed;inset:0;z-index:100005;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px}#exitConfirmOverlay .exit-card{width:min(420px,100%);background:#17243a;color:#f2f6ff;border:1px solid #405675;border-radius:16px;padding:22px;box-shadow:0 18px 60px #0009}#exitConfirmOverlay .exit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+@media print{#exitConfirmOverlay{display:none!important}}
+</style>
+<div id="exitConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="exitConfirmTitle" hidden><div class="exit-card"><h2 id="exitConfirmTitle">Konfirmasi</h2><p id="exitConfirmMessage">Apakah Anda yakin ingin keluar dari aplikasi?</p><div class="exit-actions"><button type="button" id="exitStayBtn">Batal</button><button type="button" class="primary" id="exitProceedBtn">Ya, Lanjutkan</button></div></div></div>
+<script>
+/* Navigation guard: browser/PWA back closes the active view first; unsaved changes prompt. */
+(function(){
+  const $nav=id=>document.getElementById(id);
+  let baseline='', pending=null, armed=true, suppress=false;
+  const modalOpen=()=>!!$nav('overlay')?.classList.contains('show');
+  const loginOpen=()=>!!$nav('adminLoginOverlay')?.classList.contains('show');
+  const printOpen=()=>!!$nav('printOptionsOverlay')&&!$nav('printOptionsOverlay').hidden;
+  const formOpen=()=>modalOpen()&&!$nav('form').hidden;
+  const snapshot=()=>JSON.stringify({fields:Array.from($nav('form')?.querySelectorAll('input,select,textarea')||[]).map(x=>[x.id,x.value]),roles:typeof participantRoles!=='undefined'?participantRoles:[]});
+  const dirty=()=>formOpen()&&baseline!==''&&snapshot()!==baseline;
+  const dialog=(title,message,action)=>{pending=action;$nav('exitConfirmTitle').textContent=title;$nav('exitConfirmMessage').textContent=message;$nav('exitConfirmOverlay').hidden=false;};
+  const dismiss=()=>{$nav('exitConfirmOverlay').hidden=true;pending=null;};
+  $nav('exitStayBtn').addEventListener('click',dismiss);
+  $nav('exitProceedBtn').addEventListener('click',()=>{const fn=pending;dismiss();fn?.();});
+  const originalOpenForm=window.openForm;
+  window.openForm=function(...args){originalOpenForm.apply(this,args);baseline=snapshot();};
+  const originalEdit=window.editEvent;
+  window.editEvent=function(...args){originalEdit.apply(this,args);baseline=snapshot();};
+  const originalCopy=window.copyEvent;
+  window.copyEvent=function(...args){originalCopy.apply(this,args);baseline=snapshot();};
+  const originalClose=window.closeModal;
+  const actuallyClose=()=>{suppress=true;originalClose();baseline='';suppress=false;};
+  window.closeModal=function(){if(dirty()){dialog('Perubahan belum disimpan','Data yang diubah belum disimpan. Keluar tanpa menyimpan?',actuallyClose);}else actuallyClose();};
+  const originalSave=window.saveEvent;
+  window.saveEvent=function(...args){baseline='';return originalSave.apply(this,args);};
+  const originalPrintClose=window.closePrintOptions;
+  const originalLoginClose=window.hideLoginPrompt;
+  function closeActive(){
+    if(!$nav('exitConfirmOverlay').hidden){dismiss();return true;}
+    if(printOpen()){originalPrintClose();return true;}
+    if(loginOpen()){originalLoginClose();return true;}
+    if(modalOpen()){window.closeModal();return true;}
+    if($nav('installHelp')?.classList.contains('show')){$nav('installHelp').classList.remove('show');return true;}
+    return false;
+  }
+  function arm(){try{history.pushState({twaNavigationGuard:true},'',location.href);armed=true;}catch(e){armed=false;}}
+  arm();
+  window.addEventListener('popstate',()=>{
+    if(closeActive()){arm();return;}
+    arm();
+    dialog('Keluar dari aplikasi?','Apakah Anda yakin ingin meninggalkan Transwisata Activity Timeline?',()=>{
+      // The browser controls actual app/tab closure; navigate back when history exists.
+      window.removeEventListener('beforeunload',warnUnsaved);
+      history.go(-2);
+    });
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(closeActive())e.preventDefault();}});
+  function warnUnsaved(e){if(dirty()){e.preventDefault();e.returnValue='';}}
+  window.addEventListener('beforeunload',warnUnsaved);
+})();
+</script></body></html>
