@@ -1,8 +1,13 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import {getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 const firebaseConfig={apiKey:'AIzaSyBOvXaTNP2TYCG6fjJ6U9R3MgcyIVvyRWk',authDomain:'transwisata-apps.firebaseapp.com',projectId:'transwisata-apps',storageBucket:'transwisata-apps.firebasestorage.app',messagingSenderId:'99146065058',appId:'1:99146065058:web:2508859fcd32fe78c923fb',measurementId:'G-38N246FBJT'};
-const app=initializeApp(firebaseConfig),db=getFirestore(app),activities=collection(db,'activity_timeline');
+const ADMIN_EMAIL='timeline-admin@transwisata-apps.example';
+const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app),activities=collection(db,'activity_timeline');
 const status=document.getElementById('firebaseStatus');
-window.firebaseSave=async e=>{await setDoc(doc(activities,e.id),e);};
-window.firebaseDelete=async id=>{await deleteDoc(doc(activities,id));};
-onSnapshot(activities,snapshot=>{events=snapshot.docs.map(d=>({...d.data(),id:d.id}));status.textContent='● Firebase realtime • Public';render();},err=>{status.textContent='Firebase gagal: '+err.message;console.error(err);});
+window.firebaseSave=async e=>{if(!window.isTimelineAdmin)throw Error('Login admin diperlukan');await setDoc(doc(activities,e.id),e);};
+window.firebaseDelete=async id=>{if(!window.isTimelineAdmin)throw Error('Login admin diperlukan');await deleteDoc(doc(activities,id));};
+window.timelineLogout=()=>signOut(auth);
+onAuthStateChanged(auth,user=>{const active=!!user&&user.email?.toLowerCase()===ADMIN_EMAIL;window.setTimelineAdmin(active);});
+document.getElementById('adminLoginForm').addEventListener('submit',async ev=>{ev.preventDefault();const name=document.getElementById('adminUsername').value.trim().toLowerCase();const password=document.getElementById('adminPassword').value;const error=document.getElementById('adminLoginError');error.textContent='';if(name!=='admin'){error.textContent='Username atau password salah.';return;}try{const result=await signInWithEmailAndPassword(auth,ADMIN_EMAIL,password);if(result.user.email?.toLowerCase()!==ADMIN_EMAIL)throw Error('Akun bukan admin');hideLoginPrompt();}catch(err){error.textContent='Login gagal. Periksa akun Firebase Authentication dan password.';console.error(err);}});
+onSnapshot(activities,snapshot=>{events=snapshot.docs.map(d=>({...d.data(),id:d.id}));status.textContent='● Firebase realtime • '+(window.isTimelineAdmin?'Admin':'Public view');render();},err=>{status.textContent='Firebase gagal: '+err.message;console.error(err);});

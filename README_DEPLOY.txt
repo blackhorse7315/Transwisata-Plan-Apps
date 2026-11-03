@@ -1,9 +1,12 @@
-TRANSWISATA ACTIVITY TIMELINE — PUBLIC FIREBASE PWA
+TRANSWISATA ACTIVITY TIMELINE V7 — PUBLIC VIEW + ADMIN LOGIN
 
-1. Upload semua file dalam folder ini ke hosting HTTPS (Firebase Hosting atau GitHub Pages).
-2. Firebase Console > Firestore Database > Rules: gabungkan rule khusus match /activity_timeline/{eventId} dari firestore.rules dengan rules yang sudah ada. Jangan mengganti rules koleksi lain.
-3. Publish Firestore Rules.
-4. Buka URL HTTPS. Semua pengunjung bisa melihat, menambah, mengubah, copy, dan menghapus kegiatan tanpa login.
-5. Install PWA via Chrome/Edge atau Add to Home Screen di Safari iPhone.
-
-PERINGATAN: Mode publik tanpa login memberi SEMUA pengunjung hak mengubah/menghapus SEMUA kegiatan. Jangan gunakan untuk data sensitif atau data operasional penting tanpa pengamanan tambahan. Firebase config di frontend bukan mekanisme keamanan.
+1. Firebase Console > Authentication > Sign-in method: enable Email/Password.
+2. Authentication > Users > Add user:
+   Email: timeline-admin@transwisata-apps.example
+   Password: use the admin password you specified in chat (do NOT put it into source files).
+3. In Firestore Rules, replace ONLY the existing activity_timeline match with the one in firestore.rules. Keep all other rules intact. Publish.
+4. Deploy ALL files to HTTPS hosting (Firebase Hosting / GitHub Pages).
+5. Visitors can view, share and print without login. To add/edit/copy/delete, click Login Admin, username admin, and the password configured in Firebase Authentication.
+6. No password is embedded in HTML or JavaScript. Existing Firebase accounts and collections are unaffected.
+7. If previously deployed, refresh/reinstall PWA and clear service worker cache if old version appears.
+IMPORTANT: Email alias is for Firebase Auth identity; do not create a second admin account with another email unless rules and firebase.js are updated accordingly.

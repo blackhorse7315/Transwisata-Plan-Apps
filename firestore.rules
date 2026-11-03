@@ -1,9 +1,7 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /activity_timeline/{eventId} {
-      allow read: if true;
-      allow create, update, delete: if true;
-    }
-  }
+// Add ONLY this match inside your existing /databases/{database}/documents block.
+// Keep userAccess, logbook and logbookPilots rules unchanged.
+match /activity_timeline/{eventId} {
+  allow read: if true;
+  allow create, update, delete: if request.auth != null
+    && request.auth.token.email == 'timeline-admin@transwisata-apps.example';
 }
