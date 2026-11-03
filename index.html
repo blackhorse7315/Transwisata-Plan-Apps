@@ -60,10 +60,11 @@ function updateDutySuggestions(){
 document.addEventListener('keydown',ev=>{if(ev.target&&['participantEntry','participantDuty'].includes(ev.target.id)&&ev.key==='Enter'){ev.preventDefault();addParticipant()}});
 function updateSuggestions(){
  const fields=['division','title','location','pic','participants','notes'];
- const defaults={division:['Rotary Wing','Fixedwing']};
+ const DEFAULT_CREW_NAMES=["Capt. Tobing", "Capt. Setyo", "Capt. Purwoko", "Capt. Eli", "Capt. Alfajri", "Capt. Sofwan", "Capt. Rico", "FO. Riza", "FO. Wawan", "FO. Aldy", "FO. Berliana"];
+ const defaults={division:['Rotary Wing','Fixedwing'],pic:DEFAULT_CREW_NAMES,participants:DEFAULT_CREW_NAMES};
  const root=$('suggestions');root.innerHTML='';
  fields.forEach(field=>{
-  const vals=field==='participants'?[...(savedLists.participants||[]).flatMap(participantItems),...events.flatMap(e=>participantItems(e.participants))]:[...(defaults[field]||[]),...(savedLists[field]||[]),...events.map(e=>e[field]).filter(Boolean)];
+  const vals=field==='participants'?[...DEFAULT_CREW_NAMES,...(savedLists.participants||[]).flatMap(participantItems),...events.flatMap(e=>participantItems(e.participants)),...events.flatMap(e=>rolesOf(e).map(x=>x.name))]:[...(defaults[field]||[]),...(savedLists[field]||[]),...events.map(e=>e[field]).filter(Boolean)];
   const unique=[...new Set(vals.map(v=>String(v).trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id'));
   if(field==='notes'){
    const select=$('notesHistory');select.innerHTML='<option value="">— Pilih keterangan tersimpan —</option>';
