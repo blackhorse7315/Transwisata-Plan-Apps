@@ -1,0 +1,14 @@
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import {getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+const firebaseConfig={apiKey:'AIzaSyBOvXaTNP2TYCG6fjJ6U9R3MgcyIVvyRWk',authDomain:'transwisata-apps.firebaseapp.com',projectId:'transwisata-apps',storageBucket:'transwisata-apps.firebasestorage.app',messagingSenderId:'99146065058',appId:'1:99146065058:web:2508859fcd32fe78c923fb',measurementId:'G-38N246FBJT'};
+const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app),activities=collection(db,'activity_timeline');
+const status=document.getElementById('firebaseStatus'),button=document.getElementById('authButton');
+let editor=false,loaded=false;
+const writeGuard=()=>{if(!editor)throw new Error('Silakan login sebagai Editor untuk mengubah jadwal.');};
+window.firebaseSave=async e=>{writeGuard();await setDoc(doc(activities,e.id),e);};
+window.firebaseDelete=async id=>{writeGuard();await deleteDoc(doc(activities,id));};
+window.toggleAuth=()=>{if(editor){signOut(auth).catch(err=>alert(err.message));return;}document.getElementById('authDialog').style.display='flex';};
+document.getElementById('authForm').addEventListener('submit',async ev=>{ev.preventDefault();document.getElementById('authError').textContent='';try{await signInWithEmailAndPassword(auth,document.getElementById('authEmail').value,document.getElementById('authPassword').value);document.getElementById('authDialog').style.display='none';document.getElementById('authPassword').value='';}catch(err){document.getElementById('authError').textContent=err.message;}});
+onAuthStateChanged(auth,user=>{editor=!!user;button.textContent=user?'Logout Editor':'Login Editor';if(loaded)status.textContent='● Firebase realtime • '+(user?'Editor':'Public view');});
+onSnapshot(activities,snapshot=>{events=snapshot.docs.map(d=>({...d.data(),id:d.id}));loaded=true;status.textContent='● Firebase realtime • '+(editor?'Editor':'Public view');render();},err=>{status.textContent='Firebase gagal: '+err.message;console.error(err);});
