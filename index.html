@@ -92,13 +92,40 @@ function timelinePdfFilename(data, monthIndex, year) {
 }
 window.addEventListener('afterprint', () => { document.title = timelineOriginalTitle; });
 let selectedPrintDivision='all';
-function openPrintOptions(){document.getElementById('printOptionsOverlay').hidden=false;document.getElementById('printDivisionSelect').value=selectedPrintDivision;}
+function normalizeDivisionName(value){
+ return String(value||'').trim().replace(/\s+/g,' ');
+}
+function divisionKey(value){
+ return normalizeDivisionName(value).toLocaleLowerCase('id-ID').replace(/[\s_-]+/g,'');
+}
+function printDivisionOptions(){
+ const select=document.getElementById('printDivisionSelect');
+ const existing=selectedPrintDivision;
+ const allDivisions=["Rotary Wing","Fixed Wing",...(savedLists.division||[]),...events.map(e=>e.division)];
+ const names=new Map();
+ for(const raw of allDivisions){
+  const name=normalizeDivisionName(raw),key=divisionKey(name);
+  if(!key)continue;
+  const canonical=key==='rotarywing'||key==='rotary'?'Rotary Wing':key==='fixedwing'||key==='fixed'?'Fixed Wing':name;
+  const canonicalKey=divisionKey(canonical);
+  if(!names.has(canonicalKey))names.set(canonicalKey,canonical);
+ }
+ select.replaceChildren();
+ const all=document.createElement('option');all.value='all';all.textContent='Seluruh Division';select.appendChild(all);
+ for(const [key,name] of names){
+  const option=document.createElement('option');option.value=key;option.textContent=name+' saja';select.appendChild(option);
+ }
+ select.value=[...select.options].some(o=>o.value===existing)?existing:'all';
+}
+function openPrintOptions(){printDivisionOptions();document.getElementById('printOptionsOverlay').hidden=false;}
 function closePrintOptions(){document.getElementById('printOptionsOverlay').hidden=true;}
 function confirmPrintOptions(){selectedPrintDivision=document.getElementById('printDivisionSelect').value;closePrintOptions();printReport(selectedPrintDivision);}
 function matchesPrintDivision(e,choice){
  if(choice==='all')return true;
- const d=String(e.division||'').toLowerCase().replace(/[\s_-]+/g,'');
- return choice==='rotary'?d.includes('rotary'):d.includes('fixed');
+ const d=divisionKey(e.division);
+ if(choice==='rotary'||choice==='rotarywing')return d==='rotary'||d==='rotarywing';
+ if(choice==='fixed'||choice==='fixedwing')return d==='fixed'||d==='fixedwing';
+ return d===choice;
 }
 function printReport(divisionChoice='all'){
  const y=cursor.getFullYear(),m=cursor.getMonth(),first=new Date(y,m,1),offset=(first.getDay()+6)%7;
@@ -120,7 +147,8 @@ function printReport(divisionChoice='all'){
  // Remove technical access/status labels from the printed report.
  html=html.replace(/(?:●\s*)?Firebase\s+realtime\s*[•·-]\s*Admin/gi,'');
  $('printReport').innerHTML=html;
- document.title = divisionChoice==='rotary' ? `Transwisata Rotary Wing Division Periode ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]} ${y}` : divisionChoice==='fixed' ? `Transwisata Fixed Wing Division Periode ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]} ${y}` : timelinePdfFilename(data, m, y);
+ const chosenName=divisionChoice==='all'?'':([...document.getElementById('printDivisionSelect').options].find(o=>o.value===divisionChoice)?.textContent||'').replace(/ saja$/,'');
+ document.title=divisionChoice==='all'?timelinePdfFilename(data,m,y):`Transwisata ${chosenName} Division Periode ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]} ${y}`;
  window.print();
 }
 render();</script><div id="installHelp"><strong>Install Transwisata Activity Timeline</strong><p id="installHelpText"></p><button onclick="document.getElementById('installHelp').classList.remove('show')">Tutup</button></div><script>
