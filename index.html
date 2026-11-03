@@ -52,6 +52,17 @@ function openForm(date){if(!window.isTimelineAdmin){showLoginPrompt();return;}up
 function eventMessage(e){return ['*'+e.title+'*',e.division?'Division: '+e.division:'', 'Kategori: '+(e.category||'-'),'Tanggal: '+fmt(e.start)+(e.end!==e.start?' s.d. '+fmt(e.end):''),e.startTime?'Jam: '+e.startTime+(e.endTime?' - '+e.endTime:''):'',e.location?'Lokasi: '+e.location:'',e.pic?'PIC: '+e.pic:'',e.participants?'Peserta / Aircraft: '+e.participants:'','Status: '+(e.status||'-'),e.notes?'Keterangan / Agenda:\n'+e.notes:''].filter(Boolean).join('\n')}
 function shareEventWhatsApp(id){const e=events.find(x=>x.id===id);if(!e)return;waOpen('*TRANSWISATA ACTIVITY TIMELINE*\n\n'+eventMessage(e))}
 function shareMonthWhatsApp(){const y=cursor.getFullYear(),m=cursor.getMonth(),start=dateLocal(new Date(y,m,1)),end=dateLocal(new Date(y,m+1,0));const items=filtered().filter(e=>e.start<=end&&e.end>=start).sort((a,b)=>a.start.localeCompare(b.start));const month=cursor.toLocaleDateString('id-ID',{month:'long',year:'numeric'});if(!items.length){alert('Tidak ada kegiatan pada bulan '+month+' untuk dibagikan.');return}const lines=items.map((e,i)=>(i+1)+'. '+eventMessage(e));waOpen('*TRANSWISATA ACTIVITY TIMELINE*\n*Jadwal '+month+'*\nTotal: '+items.length+' kegiatan\n\n'+lines.join('\n\n'))}
+// Judul dokumen digunakan browser sebagai nama default saat Save as PDF.
+let timelineOriginalTitle = document.title;
+function timelinePdfFilename(data, monthIndex, year) {
+ const divisions = [...new Set(data.map(e => String(e.division || '').trim().toLowerCase()).filter(Boolean))];
+ const rotary = divisions.some(v => v.includes('rotary'));
+ const fixed = divisions.some(v => v.includes('fixed'));
+ let division = rotary && fixed ? 'Rotary and Fixed Wing Division' : rotary ? 'Rotary Wing Division' : fixed ? 'Fixed Wing Division' : divisions.length === 1 ? divisions[0].replace(/[^a-z0-9 -]/gi, '').trim() + ' Division' : 'All Divisions';
+ const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ return `Transwisata ${division} Periode ${months[monthIndex]} ${year}`;
+}
+window.addEventListener('afterprint', () => { document.title = timelineOriginalTitle; });
 function printReport(){
  const y=cursor.getFullYear(),m=cursor.getMonth(),first=new Date(y,m,1),offset=(first.getDay()+6)%7;
  const month=cursor.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
@@ -72,6 +83,7 @@ function printReport(){
  // Remove technical access/status labels from the printed report.
  html=html.replace(/(?:●\s*)?Firebase\s+realtime\s*[•·-]\s*Admin/gi,'');
  $('printReport').innerHTML=html;
+ document.title = timelinePdfFilename(data, m, y);
  window.print();
 }
 render();</script><div id="installHelp"><strong>Install Transwisata Activity Timeline</strong><p id="installHelpText"></p><button onclick="document.getElementById('installHelp').classList.remove('show')">Tutup</button></div><script>
