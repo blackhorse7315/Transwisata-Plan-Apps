@@ -1,7 +1,7 @@
-// Add ONLY this match inside your existing /databases/{database}/documents block.
-// Keep userAccess, logbook and logbookPilots rules unchanged.
+// Replace ONLY the existing activity_timeline match inside the current rules.
+// Keep all other collections unchanged.
 match /activity_timeline/{eventId} {
   allow read: if true;
   allow create, update, delete: if request.auth != null
-    && request.auth.token.email == 'timeline-admin@transwisata-apps.example';
+    && request.auth.uid == 'P2I7gE9ox3OQclDrlbxLwc7oym82';
 }

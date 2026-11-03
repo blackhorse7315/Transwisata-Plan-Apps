@@ -1,12 +1,15 @@
-TRANSWISATA ACTIVITY TIMELINE V7 — PUBLIC VIEW + ADMIN LOGIN
+TRANSWISATA ACTIVITY TIMELINE V8 - FIXED ADMIN LOGIN
 
-1. Firebase Console > Authentication > Sign-in method: enable Email/Password.
-2. Authentication > Users > Add user:
-   Email: timeline-admin@transwisata-apps.example
-   Password: use the admin password you specified in chat (do NOT put it into source files).
-3. In Firestore Rules, replace ONLY the existing activity_timeline match with the one in firestore.rules. Keep all other rules intact. Publish.
-4. Deploy ALL files to HTTPS hosting (Firebase Hosting / GitHub Pages).
-5. Visitors can view, share and print without login. To add/edit/copy/delete, click Login Admin, username admin, and the password configured in Firebase Authentication.
-6. No password is embedded in HTML or JavaScript. Existing Firebase accounts and collections are unaffected.
-7. If previously deployed, refresh/reinstall PWA and clear service worker cache if old version appears.
-IMPORTANT: Email alias is for Firebase Auth identity; do not create a second admin account with another email unless rules and firebase.js are updated accordingly.
+Admin username: admin OR operation@pt-twa.co.id
+Firebase Auth email: operation@pt-twa.co.id
+Firebase Auth UID: P2I7gE9ox3OQclDrlbxLwc7oym82
+Password is NOT embedded in files. It must match the Firebase Authentication account password.
+
+1. Confirm Email/Password sign-in is enabled in Firebase Authentication.
+2. Confirm the existing Firebase Authentication user email and UID match the above.
+3. Replace ONLY the activity_timeline match in existing Firestore Rules with firestore.rules; publish.
+4. Deploy ALL files to HTTPS hosting, replacing the previous version.
+5. Hard refresh browser / close and reopen installed PWA if old cached code remains.
+6. Public users can view calendar; authenticated admin can edit.
+
+If login reports invalid credentials, reset the account password in Firebase Authentication and retry.
