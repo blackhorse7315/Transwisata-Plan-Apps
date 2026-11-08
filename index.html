@@ -143,14 +143,27 @@ function printReport(divisionChoice='all'){
  // Keep calendar on upper half of first landscape A4 page; put detailed rows below.
  // Limit first-page rows to leave the report legible, with automatic continuation pages.
  const firstRows=data.slice(0,5),remaining=data.slice(5);
- let html=`<div class="report-head"><div class="report-brand"><img class="report-logo" src="./transwisata-icon-192.png" alt="Logo Transwisata"><div><h1>TRANSWISATA | ACTIVITY TIMELINE</h1><p>Kalender Blocking & Rencana Kegiatan</p></div></div><div class="report-month">${safe(month)}</div></div><div class="report-calendar">${cal}</div><section class="report-details"><h2>Detail Kegiatan — ${safe(month)}</h2>${data.length?`<table class="report-table"><thead>${headings}</thead><tbody>${firstRows.map((e,i)=>row(e,i)).join('')}</tbody></table>`:'<div class="report-empty">Tidak ada kegiatan pada bulan ini.</div>'}${remaining.length?'<div class="report-note">Detail kegiatan berlanjut pada halaman berikutnya.</div>':''}</section>`;
+ let html=`<div class="report-head"><div class="report-brand"><img class="report-logo" src="${document.querySelector('.brand-logo')?.src || './transwisata-icon-192.png'}" alt="Logo Transwisata"><div><h1>TRANSWISATA | ACTIVITY TIMELINE</h1><p>Kalender Blocking & Rencana Kegiatan</p></div></div><div class="report-month">${safe(month)}</div></div><div class="report-calendar">${cal}</div><section class="report-details"><h2>Detail Kegiatan — ${safe(month)}</h2>${data.length?`<table class="report-table"><thead>${headings}</thead><tbody>${firstRows.map((e,i)=>row(e,i)).join('')}</tbody></table>`:'<div class="report-empty">Tidak ada kegiatan pada bulan ini.</div>'}${remaining.length?'<div class="report-note">Detail kegiatan berlanjut pada halaman berikutnya.</div>':''}</section>`;
  for(let i=0;i<remaining.length;i+=13){html+=`<section class="report-continuation"><h2>Detail Kegiatan — ${safe(month)} (Lanjutan)</h2><table class="report-table"><thead>${headings}</thead><tbody>${remaining.slice(i,i+13).map((e,j)=>row(e,i+j+5)).join('')}</tbody></table></section>`}
  // Remove technical access/status labels from the printed report.
  html=html.replace(/(?:●\s*)?Firebase\s+realtime\s*[•·-]\s*Admin/gi,'');
  $('printReport').innerHTML=html;
  const chosenName=divisionChoice==='all'?'':([...document.getElementById('printDivisionSelect').options].find(o=>o.value===divisionChoice)?.textContent||'').replace(/ saja$/,'');
  document.title=divisionChoice==='all'?timelinePdfFilename(data,m,y):`Transwisata ${chosenName} Division Periode ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]} ${y}`;
- window.print();
+ // Wait for the embedded logo to decode before opening the print dialog.
+ // A local PNG URL can race the print renderer, especially in mobile browsers.
+ const logo = document.querySelector('#printReport .report-logo');
+ const printNow = () => requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+ if (logo && !logo.complete) {
+   Promise.race([
+     logo.decode().catch(() => {}),
+     new Promise(resolve => setTimeout(resolve, 1800))
+   ]).then(printNow);
+ } else if (logo && typeof logo.decode === 'function') {
+   logo.decode().catch(() => {}).then(printNow);
+ } else {
+   printNow();
+ }
 }
 render();</script><div id="installHelp"><strong>Install Transwisata Activity Timeline</strong><p id="installHelpText"></p><button onclick="document.getElementById('installHelp').classList.remove('show')">Tutup</button></div><script>
 let deferredInstallPrompt=null;
