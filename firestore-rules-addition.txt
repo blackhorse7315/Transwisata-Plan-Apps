@@ -1,0 +1,10 @@
+// Gabungkan blok ini DI DALAM match /databases/{database}/documents pada Firestore Rules yang sudah ada.
+// Jangan mengganti keseluruhan rules aplikasi lain.
+match /activity_timeline/{eventId} {
+  allow read: if true;
+  allow write: if request.auth != null && request.auth.uid == 'P2I7gE9ox3OQclDrlbxLwc7oym82';
+}
+match /activity_timeline_master/{documentId} {
+  allow read: if true;
+  allow write: if request.auth != null && request.auth.uid == 'P2I7gE9ox3OQclDrlbxLwc7oym82';
+}
