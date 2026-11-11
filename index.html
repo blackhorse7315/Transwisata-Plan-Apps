@@ -198,7 +198,27 @@ function showInstallHelp(){const ios=/iPad|iPhone|iPod/.test(navigator.userAgent
 if('serviceWorker' in navigator&&location.protocol!=='file:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('PWA service worker:',err)))}
 </script><div id="masterOverlay" class="overlay" style="z-index:60"><div class="modal master-modal"><div class="modal-head"><h2>⚙ Master Data — Administrator</h2><button type="button" onclick="closeMasterData()">✕</button></div><p style="color:#b7c9df;font-size:13px">Hanya Admin yang dapat menambah atau menghapus pilihan. Perubahan tersimpan di Firebase dan tersedia di semua perangkat.</p><div id="masterLists"></div><div class="actions"><button type="button" class="primary" onclick="closeMasterData()">Selesai</button></div></div></div><style>.master-modal{max-width:760px!important;max-height:90vh;overflow:auto}.master-section{padding:12px 0;border-bottom:1px solid #40506b}.master-section h3{margin:0 0 9px;font-size:15px}.master-add{display:flex;gap:8px}.master-add input{flex:1;min-width:0}.master-items{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.master-chip{background:#233b59;border-radius:7px;padding:6px 8px;font-size:12px}.master-chip button{border:0;background:none;color:#ffc1c1;cursor:pointer;font-size:17px;margin-left:5px}</style><div id="adminLoginOverlay" class="overlay" style="z-index:40"><div class="modal" style="max-width:410px"><div class="modal-head"><h2>Login Administrator</h2><button type="button" onclick="hideLoginPrompt()">✕</button></div><form id="adminLoginForm"><label for="adminUsername">Username</label><input id="adminUsername" autocomplete="username" required placeholder="admin atau operation@pt-twa.co.id"><label for="adminPassword" style="margin-top:12px">Password</label><input id="adminPassword" type="password" autocomplete="current-password" required><p id="adminLoginError" style="color:#ffb0b0;min-height:1.2em"></p><div class="actions"><button type="button" onclick="hideLoginPrompt()">Batal</button><button type="submit" class="primary">Login</button></div></form></div></div><script>window.isTimelineAdmin=false;function showLoginPrompt(){document.getElementById('adminLoginOverlay').classList.add('show');document.getElementById('adminLoginError').textContent='';}function hideLoginPrompt(){document.getElementById('adminLoginOverlay').classList.remove('show');document.getElementById('adminPassword').value='';}function toggleAdminLogin(){if(window.isTimelineAdmin){window.timelineLogout();}else showLoginPrompt();}window.setTimelineAdmin=function(active){window.isTimelineAdmin=active;document.getElementById('authBtn').textContent=active?'Logout Admin':'Login Admin';document.getElementById('addBtn').hidden=!active;document.querySelectorAll('.admin-only').forEach(el=>el.hidden=!active);if(typeof render==='function')render();};</script><div id="firebaseBar" style="position:fixed;bottom:12px;left:12px;z-index:30;background:#14243a;color:white;padding:10px 14px;border:1px solid #53647b;border-radius:12px;box-shadow:0 4px 18px #0006;font:13px system-ui;max-width:calc(100vw - 24px)"><span id="firebaseStatus">Menghubungkan Firebase...</span></div>
 
-<script type="module" src="./firebase.js"></script><style>
+<script type="module">
+  const badge=document.getElementById('firebaseStatus');
+  const host=badge?.parentElement;
+  if(host){host.style.cursor='pointer';host.title='Ketuk untuk mencoba ulang koneksi Firebase';host.addEventListener('click',()=>location.reload());}
+  let initialized=false;
+  const show=(message)=>{if(badge)badge.textContent=message;};
+  window.addEventListener('offline',()=>show('Perangkat offline. Periksa koneksi internet. Ketuk untuk coba lagi.'));
+  window.addEventListener('online',()=>{if(!initialized)show('Internet tersedia. Ketuk untuk mencoba ulang Firebase.');});
+  const watchdog=setTimeout(()=>{
+    if(!initialized)show('Firebase belum terhubung. Periksa internet / akses CDN, lalu ketuk untuk coba lagi.');
+  },12000);
+  try{
+    await import('./firebase.js');
+    initialized=true;
+    clearTimeout(watchdog);
+  }catch(error){
+    clearTimeout(watchdog);
+    console.error('Firebase module gagal dimuat:',error);
+    show('Gagal memuat Firebase: '+(error?.message||'Network error')+'. Ketuk untuk coba lagi.');
+  }
+</script><style>
 #exitConfirmOverlay[hidden]{display:none!important}#exitConfirmOverlay{position:fixed;inset:0;z-index:100005;background:#000b;display:flex;align-items:center;justify-content:center;padding:18px}#exitConfirmOverlay .exit-card{width:min(420px,100%);background:#17243a;color:#f2f6ff;border:1px solid #405675;border-radius:16px;padding:22px;box-shadow:0 18px 60px #0009}#exitConfirmOverlay .exit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 @media print{#exitConfirmOverlay{display:none!important}}
 </style>
